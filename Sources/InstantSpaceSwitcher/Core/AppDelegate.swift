@@ -19,6 +19,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       print("Failed to initialize ISS event tap")
     }
 
+    let defaults = UserDefaults.standard
+    iss_set_swipe_velocity(defaults.object(forKey: "swipeVelocity") as? Double ?? 400.0)
+
     setupMainMenu()
     menuBarController.delegate = self
     menuBarController.setup()

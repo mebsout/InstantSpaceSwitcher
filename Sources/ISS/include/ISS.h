@@ -8,6 +8,12 @@
  */
 bool iss_init(void);
 
+/** @brief Set the swipe velocity used for space switch gestures.
+ *  Higher values make the switch faster. Default is 400.0.
+ *  @param velocity Absolute swipe velocity value (sign is applied automatically).
+ */
+void iss_set_swipe_velocity(double velocity);
+
 /** @brief Clean up resources */
 void iss_destroy(void);
 

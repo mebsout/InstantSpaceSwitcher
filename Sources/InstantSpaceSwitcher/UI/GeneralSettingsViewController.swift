@@ -1,4 +1,5 @@
 import AppKit
+import ISS
 import ServiceManagement
 
 final class GeneralSettingsViewController: NSViewController {
@@ -8,6 +9,10 @@ final class GeneralSettingsViewController: NSViewController {
   private let osdDurationLabel = NSTextField(labelWithString: "Duration:")
   private let launchAtLoginCheckbox = NSButton(
     checkboxWithTitle: "Launch at login", target: nil, action: nil)
+
+  private let swipeVelocitySlider = NSSlider(value: 400.0, minValue: 10.0, maxValue: 400.0, target: nil, action: nil)
+  private let swipeVelocityLabel = NSTextField(labelWithString: "Swipe velocity:")
+  private let swipeVelocityValue = NSTextField(labelWithString: "400")
 
   private let durationPresets = [100, 200, 300, 500, 750, 1000]
 
@@ -52,10 +57,28 @@ final class GeneralSettingsViewController: NSViewController {
     launchAtLoginCheckbox.target = self
     launchAtLoginCheckbox.action = #selector(launchAtLoginChanged)
 
+    // Swipe velocity slider
+    swipeVelocitySlider.target = self
+    swipeVelocitySlider.action = #selector(swipeVelocityChanged)
+    swipeVelocitySlider.isContinuous = true
+    swipeVelocitySlider.widthAnchor.constraint(equalToConstant: 150).isActive = true
+
+    let swipeVelocityContainer = NSStackView()
+    swipeVelocityContainer.orientation = .horizontal
+    swipeVelocityContainer.spacing = 8
+    swipeVelocityContainer.addArrangedSubview(swipeVelocityLabel)
+    swipeVelocityContainer.addArrangedSubview(swipeVelocitySlider)
+    swipeVelocityContainer.addArrangedSubview(swipeVelocityValue)
+
+    let animationLabel = NSTextField(labelWithString: "Animation")
+    animationLabel.font = NSFont.boldSystemFont(ofSize: 13)
+
     stackView.addArrangedSubview(generalLabel)
     stackView.addArrangedSubview(showOSDCheckbox)
     stackView.addArrangedSubview(osdDurationContainer)
     stackView.addArrangedSubview(launchAtLoginCheckbox)
+    stackView.addArrangedSubview(animationLabel)
+    stackView.addArrangedSubview(swipeVelocityContainer)
 
     view.addSubview(stackView)
 
@@ -80,6 +103,11 @@ final class GeneralSettingsViewController: NSViewController {
     osdDurationPopup.isEnabled = showOSD
 
     launchAtLoginCheckbox.state = SMAppService.mainApp.status == .enabled ? .on : .off
+
+    let velocity = defaults.object(forKey: "swipeVelocity") as? Double ?? 400.0
+    swipeVelocitySlider.doubleValue = velocity
+    swipeVelocityValue.stringValue = String(format: "%.0f", velocity)
+    iss_set_swipe_velocity(velocity)
   }
 
   @objc private func showOSDChanged(_ sender: NSButton) {
@@ -93,6 +121,13 @@ final class GeneralSettingsViewController: NSViewController {
     guard index >= 0 && index < durationPresets.count else { return }
     let duration = durationPresets[index]
     defaults.set(duration, forKey: "osdDurationMs")
+  }
+
+  @objc private func swipeVelocityChanged(_ sender: NSSlider) {
+    let value = sender.doubleValue
+    swipeVelocityValue.stringValue = String(format: "%.0f", value)
+    defaults.set(value, forKey: "swipeVelocity")
+    iss_set_swipe_velocity(value)
   }
 
   @objc private func launchAtLoginChanged(_ sender: NSButton) {

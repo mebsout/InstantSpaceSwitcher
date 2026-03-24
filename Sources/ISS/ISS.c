@@ -57,6 +57,8 @@ extern CGSSpaceID CGSGetActiveSpace(CGSConnectionID connection) __attribute__((w
 static CFMachPortRef globalTap = NULL;
 static CFRunLoopSourceRef globalSource = NULL;
 
+static double gSwipeVelocity = 400.0;
+
 static bool extract_space_info_from_display(CFDictionaryRef displayDict,
                                             CGSSpaceID activeSpace,
                                             bool hasActiveSpace,
@@ -280,7 +282,7 @@ static bool iss_post_switch_gesture(ISSDirection direction) {
     const double swipeProgress = isRight ? 2.0 : -2.0;
 
     // self-explanatory
-    const double swipeVelocity = isRight ? 400.0 : -400.0;
+    const double swipeVelocity = isRight ? gSwipeVelocity : -gSwipeVelocity;
 
     //
     // -- Begin gesture --
@@ -381,6 +383,10 @@ void iss_destroy(void) {
         CFRelease(globalTap);
         globalTap = NULL;
     }
+}
+
+void iss_set_swipe_velocity(double velocity) {
+    gSwipeVelocity = velocity > 0 ? velocity : 400.0;
 }
 
 bool iss_get_space_info(ISSSpaceInfo *info) {
