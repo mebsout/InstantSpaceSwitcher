@@ -64,7 +64,7 @@ static bool extract_space_info_from_display(CFDictionaryRef displayDict,
                                             bool hasActiveSpace,
                                             ISSSpaceInfo *outInfo);
 static bool load_space_info_for_display(ISSSpaceInfo *info, bool useCursorDisplay);
-static bool iss_post_switch_gesture(ISSDirection direction);
+static bool iss_post_switch_gesture(ISSDirection direction, unsigned int velocity_scale);
 static bool iss_switch_with_info(const ISSSpaceInfo *info, ISSDirection direction);
 static bool iss_should_block_switch(const ISSSpaceInfo *info, ISSDirection direction);
 
@@ -272,7 +272,7 @@ bool iss_can_move(ISSSpaceInfo info, ISSDirection direction) {
     return !iss_should_block_switch(&info, direction);
 }
 
-static bool iss_post_switch_gesture(ISSDirection direction) {
+static bool iss_post_switch_gesture(ISSDirection direction, unsigned int velocity_scale) {
     const bool isRight = (direction == ISSDirectionRight);
 
     // ScrollGestureFlagBits seem to mark direction (anything non-zero)
@@ -281,8 +281,9 @@ static bool iss_post_switch_gesture(ISSDirection direction) {
     // Corresponds to distance, or something along those lines
     const double swipeProgress = isRight ? 2.0 : -2.0;
 
-    // self-explanatory
-    const double swipeVelocity = isRight ? gSwipeVelocity : -gSwipeVelocity;
+    // Scale velocity by the number of steps for multi-space switches
+    const double scaledVelocity = gSwipeVelocity * (velocity_scale > 1 ? velocity_scale : 1);
+    const double swipeVelocity = isRight ? scaledVelocity : -scaledVelocity;
 
     //
     // -- Begin gesture --
@@ -411,7 +412,7 @@ static bool iss_switch_with_info(const ISSSpaceInfo *info, ISSDirection directio
     if (iss_should_block_switch(info, direction)) {
         return false;
     }
-    if (!iss_post_switch_gesture(direction)) {
+    if (!iss_post_switch_gesture(direction, 1)) {
         return false;
     }
 
@@ -424,7 +425,7 @@ bool iss_switch(ISSDirection direction) {
         return iss_switch_with_info(&info, direction);
     }
 
-    return iss_post_switch_gesture(direction);
+    return iss_post_switch_gesture(direction, 1);
 }
 
 bool iss_switch_to_index(unsigned int targetIndex) {
@@ -450,7 +451,7 @@ bool iss_switch_to_index(unsigned int targetIndex) {
     unsigned int steps = direction == ISSDirectionRight ? (targetIndex - info.currentIndex) : (info.currentIndex - targetIndex);
 
     for (unsigned int i = 0; i < steps; i++) {
-        if (!iss_post_switch_gesture(direction)) {
+        if (!iss_post_switch_gesture(direction, steps)) {
             return false;
         }
     }
